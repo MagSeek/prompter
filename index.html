@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <title>分類相片顯示</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 2em;
+    }
+    .gallery {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .gallery img {
+      width: 200px;
+      height: auto;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+  <h1>相片分類：示範資料夾</h1>
+  <div class="gallery" id="gallery"></div>
+
+  <script>
+    // ✅ 假設這些圖片都放在 GitHub Repo 的 /images 資料夾中
+    const imageNames = [
+      "1.jpg",
+      "2.jpg",
+      "3.jpg",
+      "4.jpg",
+      "5.jpg"
+    ];
+
+    // 依照檔名排序
+    imageNames.sort();
+
+    const galleryDiv = document.getElementById("gallery");
+
+    imageNames.forEach(name => {
+      const img = document.createElement("img");
+      img.src = `images/${name}`; // 對應 images 資料夾
+      img.alt = name;
+      galleryDiv.appendChild(img);
+    });
+  </script>
+</body>
+</html>
