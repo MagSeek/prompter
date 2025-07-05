@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>分類相簿（滑動 + 搜尋）</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 1em;
+    }
+    .search-box {
+      margin-bottom: 1em;
+    }
+    .search-box input {
+      width: 100%;
+      padding: 8px;
+      font-size: 16px;
+    }
+    .tabs {
+      margin-bottom: 1em;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+    .tabs button {
+      margin-right: 10px;
+      padding: 8px 16px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .tabs button.active {
+      background-color: #444;
+      color: white;
+    }
+    .gallery {
+      display: none;
+      overflow-x: auto;
+      white-space: nowrap;
+      padding-bottom: 1em;
+    }
+    .gallery.active {
+      display: block;
+    }
+    .item {
+      display: inline-block;
+      width: 180px;
+      margin-right: 12px;
+      vertical-align: top;
+      text-align: center;
+    }
+    .item img {
+      width: 100%;
+      height: auto;
+      border: 1px solid #ccc;
+      cursor: pointer;
+    }
+    .title {
+      font-weight: bold;
+      margin-top: 5px;
+    }
+    .date {
+      color: #666;
+      font-size: 14px;
+    }
+    #overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.8);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+    #overlay img {
+      max-width: 90%;
+      max-height: 90%;
+    }
+  </style>
+</head>
+<body>
+  <h1>客戶包裝提示</h1>
+
+  <div class="search-box">
+    <input type="text" id="search" placeholder="🔍 搜尋標題或日期...">
+  </div>
+
+  <div class="tabs" id="tabs"></div>
+  <div id="galleries"></div>
+
+  <div id="overlay" onclick="this.style.display='none'">
+    <img id="overlay-img" src="" alt="full">
+  </div>
+
+  <script>
+    const categories = {
+      "健談": [
+        { file: "1.jpg", title: "1", date: "2024-01-01" },
+        { file: "2.jpg", title: "2", date: "2024-01-02" },
+        { file: "3.jpg", title: "3", date: "2024-01-03" }
+      ],
+      "幽默": [
+        { file: "4.jpg", title: "4", date: "2024-02-01" },
+        { file: "5.jpg", title: "5", date: "2024-02-02" },
+        { file: "c.jpg", title: "幽默圖片C", date: "2024-02-03" }
+      ]
+    };
+
+    const tabsDiv = document.getElementById("tabs");
+    const galleriesDiv = document.getElementById("galleries");
+    const searchInput = document.getElementById("search");
+
+    for (const [category, images] of Object.entries(categories)) {
+      const button = document.createElement("button");
+      button.textContent = category;
+      button.onclick = () => showGallery(category);
+      tabsDiv.appendChild(button);
+
+      const gallery = document.createElement("div");
+      gallery.className = "gallery";
+      gallery.id = `gallery-${category}`;
+
+      images.forEach(item => {
+        const wrapper = document.createElement("div");
+        wrapper.className = "item";
+        wrapper.dataset.title = item.title.toLowerCase();
+        wrapper.dataset.date = item.date;
+
+        const img = document.createElement("img");
+        img.src = `${category}/${item.file}`;
+        img.alt = item.title;
+        img.onclick = () => showOverlay(`${category}/${item.file}`);
+        wrapper.appendChild(img);
+
+        const title = document.createElement("div");
+        title.className = "title";
+        title.textContent = item.title;
+        wrapper.appendChild(title);
+
+        const date = document.createElement("div");
+        date.className = "date";
+        date.textContent = `上傳日期：${item.date}`;
+        wrapper.appendChild(date);
+
+        gallery.appendChild(wrapper);
+      });
+
+      galleriesDiv.appendChild(gallery);
+    }
+
+    function showGallery(category) {
+      document.querySelectorAll(".gallery").forEach(g => g.classList.remove("active"));
+      document.querySelectorAll(".tabs button").forEach(b => b.classList.remove("active"));
+      document.getElementById(`gallery-${category}`).classList.add("active");
+      [...tabsDiv.children].find(btn => btn.textContent === category).classList.add("active");
+      searchInput.value = "";
+      filterItems("");
+    }
+
+    function showOverlay(src) {
+      const overlay = document.getElementById("overlay");
+      const overlayImg = document.getElementById("overlay-img");
+      overlayImg.src = src;
+      overlay.style.display = "flex";
+    }
+
+    function filterItems(keyword) {
+      const activeGallery = document.querySelector(".gallery.active");
+      const items = activeGallery.querySelectorAll(".item");
+      items.forEach(item => {
+        const match = item.dataset.title.includes(keyword.toLowerCase()) || item.dataset.date.includes(keyword);
+        item.style.display = match ? "inline-block" : "none";
+      });
+    }
+
+    searchInput.addEventListener("input", e => {
+      filterItems(e.target.value);
+    });
+
+    const firstCategory = Object.keys(categories)[0];
+    showGallery(firstCategory);
+  </script>
+</body>
+</html>
