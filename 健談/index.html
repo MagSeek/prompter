@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>客戶包裝提示</title>
+
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <link rel="icon" href="favicon.png" type="image/png">
+  <link rel="icon" sizes="192x192" href="path/to/your/icon-192x192.png">
+  <link rel="apple-touch-icon" href="path/to/your/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="path/to/your/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="path/to/your/favicon-16x16.png">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f9f9f9;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+
+    header {
+      display: flex;
+      /* === MODIFIED: 將內容再次置中 === */
+      justify-content: center; 
+      align-items: center;
+      /* === MODIFIED: 調整標題和連結之間的間距 === */
+      gap: 15px; /* 標題和連結之間的間距 */
+      margin-bottom: 20px;
+      flex-wrap: wrap; /* 允許在小螢幕下換行 */
+      padding: 0 10px; /* 左右內邊距 */
+    }
+
+    h1 {
+      margin: 0;
+      flex-shrink: 0;
+      color: #0056b3;
+      /* 移除 text-align: left; 因為現在是居中 */
+      text-align: center; /* 為了確保標題內部文本居中，雖然單行影響不大 */
+    }
+
+    .header-home-link {
+        font-size: 18px;
+        color: #007bff;
+        text-decoration: none;
+        font-weight: bold;
+        white-space: nowrap;
+        padding: 5px 10px;
+        border-radius: 5px;
+        transition: background 0.2s, color 0.2s;
+        /* 移除 text-align: right; 因為現在是居中 */
+        text-align: center; /* 確保連結內部文本居中 */
+    }
+
+    .header-home-link:hover {
+        background: #e9ecef;
+        color: #0056b3;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 15px;
+      max-width: 1000px;
+      margin: auto;
+    }
+
+    .image-box {
+      display: flex;
+      justify-content: center;
+    }
+
+    .grid img {
+      width: 100%;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      transition: transform 0.2s;
+    }
+
+    .grid img:hover {
+      transform: scale(1.05);
+    }
+
+    #lightbox {
+      position: fixed;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.8);
+      z-index: 1000;
+      padding: 20px;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+
+    #lightbox img {
+      max-width: calc(90vw - 80px);
+      max-height: 80vh;
+      transform-origin: center center;
+      transition: transform 0.2s ease;
+      object-fit: contain;
+
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      cursor: grab;
+      will-change: transform; 
+    }
+    
+    #lightbox img.sliding-left {
+        transform: translate(calc(-50% - 100vw), calc(-50% + ${currentY}px)) scale(${currentScale}); 
+    }
+    #lightbox img.sliding-right {
+        transform: translate(calc(-50% + 100vw), calc(-50% + ${currentY}px)) scale(${currentScale}); 
+    }
+    #lightbox img.slide-in-left {
+        transform: translate(calc(-50% + 100vw), calc(-50% + ${currentY}px)) scale(${currentScale}); 
+    }
+    #lightbox img.slide-in-right {
+        transform: translate(calc(-50% - 100vw), calc(-50% + ${currentY}px)) scale(${currentScale}); 
+    }
+
+    #lightbox img.is-dragging {
+      cursor: grabbing;
+      transition: none; 
+    }
+
+    #lightbox-controls {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 1002;
+    }
+
+    .close-and-zoom-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 8px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        width: auto;
+        min-width: 50px;
+        max-width: 60px;
+    }
+
+    #closeLightbox {
+      background: #f00;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 5px;
+      border: none;
+      line-height: 1;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      transition: background 0.2s;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 18px;
+      box-sizing: border-box;
+    }
+
+    #closeLightbox:hover {
+        background: #d00;
+    }
+
+    .nav-buttons {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      z-index: 1001;
+      align-items: center;
+    }
+
+    .nav-buttons button,
+    .nav-buttons a {
+      padding: 10px 15px;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.1);
+      color: white;
+      cursor: pointer;
+      transition: background 0.2s;
+      text-decoration: none;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    .nav-buttons button:hover,
+    .nav-buttons a:hover {
+      background: rgba(255,255,255,0.3);
+    }
+
+    .return-home-in-lightbox {
+      color: #ff4d4d !important;
+    }
+
+    .return-home-in-lightbox:hover {
+        color: #fff !important;
+        background: rgba(255,255,255,0.3);
+    }
+
+    #zoomSlider {
+      width: 80px;
+      -webkit-appearance: slider-vertical;
+      writing-mode: bt-lr;
+      appearance: slider-vertical;
+      margin: 0;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 5px;
+    }
+
+    @media (max-width: 600px) {
+      header {
+        /* === MODIFIED: 小螢幕下如果空間允許，也嘗試居中，否則可能換行堆疊 === */
+        flex-direction: row; /* 嘗試保持水平 */
+        justify-content: center; /* 嘗試居中 */
+        align-items: center;
+        gap: 10px; 
+        padding: 10px; 
+      }
+      h1 {
+          font-size: 1.2em; 
+      }
+      .header-home-link {
+          font-size: 16px;
+          padding: 3px 8px;
+      }
+
+      .grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      }
+
+      #lightbox img {
+        max-width: calc(95vw - 60px);
+        max-height: 70vh;
+      }
+
+      #lightbox-controls {
+        right: 10px;
+        top: 10px;
+      }
+
+      .close-and-zoom-container {
+        padding: 5px;
+        gap: 5px;
+        min-width: 40px;
+        max-width: 50px;
+      }
+
+      #closeLightbox {
+        width: 28px;
+        height: 28px;
+        padding: 3px 6px;
+        font-size: 16px;
+      }
+
+      #zoomSlider {
+        width: 60px;
+      }
+      
+      .nav-buttons {
+        gap: 8px;
+        bottom: 10px;
+        flex-wrap: nowrap;
+      }
+
+      .nav-buttons button,
+      .nav-buttons a {
+        padding: 8px 12px;
+        font-size: 14px;
+        min-width: unset;
+        flex-shrink: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>客戶包裝提示</h1>
+    <a href="客戶包裝提示主頁.html" class="header-home-link">返回主頁</a> 
+  </header>
+
+  <div class="grid" id="imageGrid"></div>
+
+  <div id="lightbox">
+    <div id="lightbox-controls">
+      <div class="close-and-zoom-container">
+        <span id="closeLightbox">✕</span>
+        <input type="range" id="zoomSlider" min="100" max="280" value="100" step="10">
+      </div>
+    </div>
+    <img id="lightboxImg" src="" alt="燈箱圖片" />
+    <div class="nav-buttons">
+      <button id="prevBtn">← 上一張</button>
+      <a href="../" class="return-home-in-lightbox">⟵ 返回主頁</a> 
+      <button id="nextBtn">下一張 →</button>
+    </div>
+  </div>
+
+  <script>
+    const imageGrid = document.getElementById('imageGrid');
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImg = document.getElementById('lightboxImg');
+    const closeBtn = document.getElementById('closeLightbox');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const zoomSlider = document.getElementById('zoomSlider');
+
+    const imageList = [];
+    for (let i = 0; i < 50; i++) {
+      const fileName = i.toString().padStart(2, '0') + '.jpg';
+      imageList.push({ name: fileName, url: fileName });
+    }
+
+    let displayList = [];
+    let currentIndex = -1;
+    let currentScale = 1;
+    let currentX = 0;
+    let currentY = 0;
+    let isDragging = false; 
+    
+    let isSwiping = false; 
+    let startSwipeX = 0;
+    let startSwipeY = 0;
+    const swipeThreshold = 50; 
+    const verticalTolerance = 30; 
+
+    function renderGrid() {
+      imageList.forEach(({ url }) => {
+        const box = document.createElement('div');
+        box.className = 'image-box';
+
+        const img = document.createElement('img');
+        img.src = url;
+        img.alt = '';
+        img.loading = "lazy";
+        img.onerror = () => {
+          box.style.display = 'none';
+        };
+        img.onload = () => {
+          displayList.push(url);
+        };
+        img.onclick = () => openLightbox(displayList.indexOf(url));
+
+        box.appendChild(img);
+        imageGrid.appendChild(box);
+      });
+    }
+
+    function updateImageTransform() {
+      lightboxImg.style.transform = `translate(calc(-50% + ${currentX}px), calc(-50% + ${currentY}px)) scale(${currentScale})`;
+    }
+
+    function resetZoom() {
+      currentScale = 1;
+      currentX = 0;
+      currentY = 0;
+      zoomSlider.value = 100;
+      updateImageTransform();
+    }
+
+    function openLightbox(index) {
+      if (index < 0 || index >= displayList.length) return;
+      currentIndex = index;
+      lightboxImg.src = displayList[currentIndex];
+      lightbox.style.display = 'flex';
+      resetZoom();
+      lightboxImg.classList.remove('sliding-left', 'sliding-right', 'slide-in-left', 'slide-in-right');
+    }
+
+    function closeLightbox() {
+      lightbox.style.display = 'none';
+      currentIndex = -1;
+      if (isDragging) {
+        isDragging = false;
+        lightboxImg.classList.remove('is-dragging');
+      }
+      isSwiping = false; 
+    }
+
+    function showPrev() {
+      if (displayList.length === 0) return;
+      let prevIndex = (currentIndex - 1 + displayList.length) % displayList.length;
+      triggerSlideAnimation(prevIndex, 'right');
+    }
+
+    function showNext() {
+      if (displayList.length === 0) return;
+      let nextIndex = (currentIndex + 1) % displayList.length;
+      triggerSlideAnimation(nextIndex, 'left');
+    }
+
+    function triggerSlideAnimation(newIndex, direction) {
+        if (displayList.length === 0 || currentIndex === newIndex) return;
+
+        lightboxImg.style.transition = 'transform 0.3s ease-out';
+        if (direction === 'left') { 
+            lightboxImg.classList.add('sliding-left');
+        } else { 
+            lightboxImg.classList.add('sliding-right');
+        }
+
+        setTimeout(() => {
+            lightboxImg.style.transition = 'none'; 
+            lightboxImg.classList.remove('sliding-left', 'sliding-right'); 
+            
+            currentIndex = newIndex;
+            lightboxImg.src = displayList[currentIndex];
+            resetZoom(); 
+
+            if (direction === 'left') { 
+                lightboxImg.classList.add('slide-in-right');
+            } else { 
+                lightboxImg.classList.add('slide-in-left');
+            }
+            
+            void lightboxImg.offsetWidth; 
+
+            lightboxImg.style.transition = 'transform 0.3s ease-out';
+            lightboxImg.classList.remove('slide-in-left', 'slide-in-right'); 
+            updateImageTransform(); 
+        }, 300); 
+    }
+
+
+    zoomSlider.addEventListener('input', () => {
+      const newScale = parseInt(zoomSlider.value) / 100;
+      if (newScale < 1) {
+          currentScale = 1;
+          zoomSlider.value = 100;
+          resetZoom();
+      } else {
+          currentScale = newScale;
+          if (zoomSlider.value === "100") {
+              resetZoom();
+          } else {
+              updateImageTransform();
+          }
+      }
+      updateImageTransform();
+    });
+
+    function onPointerDown(e) {
+      if (e.touches && e.touches.length === 1 && currentScale === 1) {
+          isSwiping = true;
+          startSwipeX = e.touches[0].clientX;
+          startSwipeY = e.touches[0].clientY;
+          e.preventDefault(); 
+      } 
+      else if (currentScale > 1 && e.target === lightboxImg) { 
+        isDragging = true;
+        lightboxImg.classList.add('is-dragging');
+        startPointerX = e.clientX || e.touches[0].clientX;
+        startPointerY = e.clientY || e.touches[0].clientY;
+        e.preventDefault(); 
+      }
+    }
+
+    function onPointerMove(e) {
+      if (isDragging) { 
+        const currentPointerX = e.clientX || e.touches[0].clientX;
+        const currentPointerY = e.clientY || e.touches[0].clientY;
+        const dx = currentPointerX - startPointerX;
+        const dy = currentPointerY - startPointerY;
+        currentX += dx;
+        currentY += dy;
+        startPointerX = currentPointerX;
+        startPointerY = currentPointerY;
+        updateImageTransform();
+        e.preventDefault(); 
+      } 
+      else if (isSwiping) { 
+          const currentX = e.touches[0].clientX;
+          const currentY = e.touches[0].clientY;
+          const deltaX = currentX - startSwipeX;
+          const deltaY = currentY - startSwipeY;
+
+          if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaY) < verticalTolerance) {
+              // Optionally add visual feedback for swipe here
+          } else {
+              isSwiping = false; 
+          }
+          e.preventDefault(); 
+      }
+    }
+
+    function onPointerUp(e) {
+      if (isDragging) { 
+        isDragging = false;
+        lightboxImg.classList.remove('is-dragging');
+      } 
+      else if (isSwiping) { 
+          const endSwipeX = e.changedTouches[0].clientX;
+          const deltaX = endSwipeX - startSwipeX;
+
+          if (deltaX > swipeThreshold) { 
+              showPrev();
+          } else if (deltaX < -swipeThreshold) { 
+              showNext();
+          }
+          isSwiping = false;
+      }
+    }
+
+    lightboxImg.addEventListener('mousedown', onPointerDown);
+    lightbox.addEventListener('touchstart', onPointerDown, { passive: false }); 
+
+    lightbox.addEventListener('mousemove', onPointerMove);
+    lightbox.addEventListener('touchmove', onPointerMove, { passive: false });
+
+    lightbox.addEventListener('mouseup', onPointerUp);
+    lightbox.addEventListener('touchend', onPointerUp);
+    lightbox.addEventListener('mouseleave', onPointerUp);
+    lightbox.addEventListener('touchcancel', onPointerUp);
+
+    prevBtn.onclick = showPrev;
+    nextBtn.onclick = showNext;
+    closeBtn.onclick = closeLightbox;
+
+    document.addEventListener('keydown', (e) => {
+      if (lightbox.style.display === 'flex') {
+        if (e.key === 'ArrowRight') showNext();
+        if (e.key === 'ArrowLeft') showPrev();
+        if (e.key === 'Escape') closeLightbox();
+      }
+    });
+
+    renderGrid();
+  </script>
+</body>
+</html>
